@@ -21,6 +21,7 @@ import traceback, sys
 from pymodbus.client.sync import ModbusTcpClient
 from ctypes import cdll, c_int, c_uint, c_double
 
+################################################
 ### Configure ethernet communication for Wago
 IP = '192.168.1.3' # Set IP address here
 client = ModbusTcpClient(IP)
@@ -35,8 +36,12 @@ ser.bytesize = 8
 ser.parity = 'N'
 ser.stopbits = 1
 ser.timeout = 0 # second
+################################################
 
+
+################################################
 # MCL functions
+################################################
 
 class Madstage():
     def __init__(self):
@@ -85,10 +90,12 @@ class Madstage():
         mcl_movecmd.restype = c_int
         return mcl_movecmd(c_uint(axis), c_double(velocity), c_double(distance), c_int(self.handler))
 
+################################################
 # GUI
+################################################
+
 # This part does not change:
-##########################################
-##########################################
+############
 class WorkerSignals(QObject):
     '''defines signals from running worker thread
     '''
@@ -123,8 +130,7 @@ class Worker(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-##########################################
-##########################################
+############
 
 class MainWindow(QMainWindow):
 
@@ -173,11 +179,6 @@ class MainWindow(QMainWindow):
         INPUT = '1111'+'1111'+'1111'+'1111'+'1111'+'1111'
         self.B = INPUT
 
-        INPUT = '1010'+'1010'+'1010'+'1010'+'1010'+'1010'
-        self.C = INPUT
-
-        INPUT = '0101'+'0101'+'0101'+'0101'+'0101'+'0101'
-        self.D = INPUT
 
         self._createDisplayBin()
         self._createButtons(buttons)
@@ -346,7 +347,7 @@ class MainWindow(QMainWindow):
 
 
 
-    # slots
+    # Slots
 
     # For Wago
 # Must not let multiple routines start in parallel
@@ -385,18 +386,18 @@ class MainWindow(QMainWindow):
 
     def executefn2(self,results):
         for i in range(10):
-            results.emit('C')
-            time.sleep(1)
-            results.emit('D')
-            time.sleep(1)
-
-    def executefn3(self,results):
-        for i in range(10):
             results.emit('A')
             time.sleep(1)
             results.emit('B')
             time.sleep(1)
-            results.emit('C')
+
+    def executefn3(self,results):
+        for i in range(10):
+            results.emit('B')
+            time.sleep(1)
+            results.emit('A')
+            time.sleep(1)
+            results.emit('B')
             time.sleep(2)
 
     def executefn4(self,results):
@@ -405,9 +406,9 @@ class MainWindow(QMainWindow):
             time.sleep(0.5)
             results.emit('B')
             time.sleep(0.5)
-            results.emit('C')
+            results.emit('A')
             time.sleep(0.5)
-            results.emit('D')
+            results.emit('B')
             time.sleep(1)
 
     def thread_complete(self):
@@ -415,22 +416,11 @@ class MainWindow(QMainWindow):
 
     # Commands programmed here
     def action(self,results):
-        if results=='A':
+        if results:
             self.bc.setText(results) # update text box
-            self.writeInputCommand(self.A)
+            self.writeInputCommand(eval('self.'+results))
             self.setButtonsState()
-        elif results=='B':
-            self.bc.setText(results) # update text box
-            self.writeInputCommand(self.B)
-            self.setButtonsState()
-        elif results=='C':
-            self.bc.setText(results) # update text box
-            self.writeInputCommand(self.C)
-            self.setButtonsState()
-        elif results=='D':
-            self.bc.setText(results) # update text box
-            self.writeInputCommand(self.D)
-            self.setButtonsState()
+
 
     def getButtonsState(self):
         # read state of buttons and display bin/Hex
@@ -445,7 +435,7 @@ class MainWindow(QMainWindow):
         # Write command to Wago
         INPUT = binstring 
         for j in range(len(INPUT)):
-            status = bool(int(INPUT[j]))
+            status = not(bool(int(INPUT[j]))) #### Invert booleans as valves are normally open
             client.write_coil(j, status)
 
 
@@ -459,7 +449,7 @@ class MainWindow(QMainWindow):
         else:
             j = 0
             for btnText, pos in self.buttons.items():
-                self.buttons[btnText].setChecked(bool(int(inputs[j])))
+                self.buttons[btnText].setChecked(not(bool(int(inputs[j])))) #### Invert booleans as valves are normally open
                 j+=1
             self.getButtonsState()
             self.b4.setText('OK')
