@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):
         else:
             j = 0
             for btnText, pos in self.buttons.items():
-                self.buttons[btnText].setChecked(not(bool(int(inputs[j])))) #### Invert booleans as valves are normally open
+                self.buttons[btnText].setChecked(bool(int(inputs[j]))) 
                 j+=1
             self.getButtonsState()
             self.b4.setText('OK')
@@ -472,7 +472,7 @@ class MainWindow(QMainWindow):
         # Write command
         INPUT = binstring 
         self.move(INPUT)
-        self.resetButtonsState() # reset all buttons
+        self.resetMCLButtonsState() # reset all buttons
         
     def resetMCLButtonsState(self):
         for btnText, pos in self.MCLbuttons.items():
